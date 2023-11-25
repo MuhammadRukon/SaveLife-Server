@@ -20,12 +20,27 @@ require("dotenv").config();
 app.get("/health", (req, res, next) => {
   res.send("home route");
 });
+// get role
+app.get("/user/role/:email", async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  const result = await User.findOne(query);
+  res.send(result);
+});
 
 //save user to db
 app.post("/users", async (req, res) => {
   const userInfo = req.body;
-  console.log(userInfo);
   const result = await User.create(userInfo);
+  res.status(200).json({ message: "User saved successfully" });
+});
+
+app.put("/user/update/:email", async (req, res) => {
+  const email = req.params.email;
+  const userInfo = req.body;
+  console.log(email, userInfo);
+
+  const result = await User.updateOne({ email }, { $set: userInfo });
   console.log(result);
   res.status(200).json({ message: "User saved successfully" });
 });
