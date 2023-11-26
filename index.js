@@ -4,6 +4,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const connectDB = require("./db/connectDB");
 const User = require("./db/userSchema");
+const Blog = require("./db/blogSchema");
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -20,31 +21,55 @@ require("dotenv").config();
 app.get("/health", (req, res, next) => {
   res.send("home route");
 });
-// get role
+app.get("/users", async (req, res) => {
+  const result = await User.find();
+  res.send(result);
+  console.log(result);
+});
+
+// get role / status / user
 app.get("/user/role/:email", async (req, res) => {
   const email = req.params.email;
   const query = { email: email };
   const result = await User.findOne(query);
   res.send(result);
 });
-
 //save user to db
 app.post("/users", async (req, res) => {
   const userInfo = req.body;
   const result = await User.create(userInfo);
-  res.status(200).json({ message: "User saved successfully" });
+  res.send(result);
 });
-
+// update user info
 app.put("/user/update/:email", async (req, res) => {
   const email = req.params.email;
   const userInfo = req.body;
-  console.log(email, userInfo);
-
   const result = await User.updateOne({ email }, { $set: userInfo });
-  console.log(result);
-  res.status(200).json({ message: "User saved successfully" });
+  res.send(result);
 });
-//
+// get all blogs
+app.get("/blogs", async (req, res) => {
+  const result = await Blog.find();
+  res.send(result);
+});
+// post a blog
+app.post("/blogs/add-blog", async (req, res) => {
+  const blog = req.body;
+  const result = await Blog.create(blog);
+  res.send(result);
+});
+// update blog status
+app.patch("/blog/:id", async (req, res) => {
+  const id = req.params.id;
+  const status = req.body;
+  const data = {
+    $set: status,
+  };
+  const filter = { _id: id };
+  const result = await Blog.updateOne(filter, data);
+  console.log(result);
+  res.send(result);
+});
 
 // error handler
 app.all("*", (req, res, next) => {
@@ -59,7 +84,6 @@ app.use((err, req, res, next) => {
   });
 });
 // error handler
-
 // server and db connection
 const main = async () => {
   await connectDB();
