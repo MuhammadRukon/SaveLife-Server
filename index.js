@@ -21,12 +21,13 @@ require("dotenv").config();
 app.get("/health", (req, res, next) => {
   res.send("home route");
 });
+
+// get all users
 app.get("/users", async (req, res) => {
   const result = await User.find();
   res.send(result);
   console.log(result);
 });
-
 // get role / status / user
 app.get("/user/role/:email", async (req, res) => {
   const email = req.params.email;
@@ -67,7 +68,13 @@ app.patch("/blog/:id", async (req, res) => {
   };
   const filter = { _id: id };
   const result = await Blog.updateOne(filter, data);
-  console.log(result);
+  res.send(result);
+});
+// delete a blog
+app.delete("/blog/:id", async (req, res) => {
+  const id = req.params.id;
+  const filter = { _id: id };
+  const result = await Blog.deleteOne(filter);
   res.send(result);
 });
 
