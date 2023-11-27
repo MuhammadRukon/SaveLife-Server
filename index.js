@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const connectDB = require("./db/connectDB");
 const User = require("./db/userSchema");
 const Blog = require("./db/blogSchema");
+const BloodRequest = require("./db/BloodRequestSchema");
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -75,6 +76,70 @@ app.delete("/blog/:id", async (req, res) => {
   const id = req.params.id;
   const filter = { _id: id };
   const result = await Blog.deleteOne(filter);
+  res.send(result);
+});
+// get all blood donation request
+app.get("/blood-donations", async (req, res) => {
+  const result = await BloodRequest.find();
+  res.send(result);
+});
+// get specific donors blood donation requests
+app.get("/blood-donations/:email", async (req, res) => {
+  const email = req.params.email;
+  const filter = { requesterEmail: email };
+  const result = await BloodRequest.find(filter);
+  res.send(result);
+});
+//get Specific recent 3 donate request
+app.get("/blood-donations/recent/:email", async (req, res) => {
+  const email = req.params.email;
+  const filter = { requesterEmail: email };
+  const result = await BloodRequest.find(filter)
+    .sort({ donationDate: 1 })
+    .limit(3);
+  console.log(result);
+  res.send(result);
+});
+// get single donation by id
+app.get("/blood-donation/:id", async (req, res) => {
+  const id = req.params.id;
+  const filter = { _id: id };
+  const result = await BloodRequest.findOne(filter);
+  res.send(result);
+});
+// update blood donation request
+app.patch("/blood-donation/update/:id", async (req, res) => {
+  const id = req.params.id;
+  const info = req.body;
+  const filter = { _id: id };
+  const result = await BloodRequest.updateOne(filter, info);
+  console.log(result);
+  res.send(result);
+});
+//add blood donation request
+app.post("/blood-donations", async (req, res) => {
+  const donationInfo = req.body;
+  const result = await BloodRequest.create(donationInfo);
+  res.send(result);
+  console.log(result);
+});
+// delete blood donation request
+app.delete("/blood-donation/:id", async (req, res) => {
+  const id = req.params.id;
+  const filter = { _id: id };
+  const result = await BloodRequest.deleteOne(filter);
+  res.send(result);
+  console.log(result);
+});
+//update blood donation status
+app.patch("/blood-donation/:id", async (req, res) => {
+  const id = req.params.id;
+  const status = req.body;
+  const data = {
+    $set: status,
+  };
+  const filter = { _id: id };
+  const result = await BloodRequest.updateOne(filter, data);
   res.send(result);
 });
 
