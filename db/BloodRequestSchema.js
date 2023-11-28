@@ -12,6 +12,8 @@ const bloodRequestSchema = new mongoose.Schema({
   donationStatus: { type: String, required: true },
   donationTime: { type: String, required: true },
   donationDate: { type: String, required: true },
+  donorName: { type: String, required: false },
+  donorEmail: { type: String, required: false },
 });
 
 const BloodRequest = mongoose.model("BloodRequest", bloodRequestSchema);

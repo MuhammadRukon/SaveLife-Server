@@ -27,7 +27,30 @@ app.get("/health", (req, res, next) => {
 app.get("/users", async (req, res) => {
   const result = await User.find();
   res.send(result);
-  console.log(result);
+});
+//get donor for search result
+app.get("/user/find-donor/:bloodGroup", async (req, res) => {
+  const query = req.query;
+  const group = req.params.bloodGroup;
+  const filter = { ...query, bloodGroup: group };
+  const result = await User.find(filter);
+  res.send(result), console.log(result);
+});
+// get all users pagination
+app.get("/users/selected", async (req, res) => {
+  const userStatus = req.query.status;
+  const page = Number(req.query.page - 1) || 0;
+  const size = Number(req.query.size) || 4;
+  let filter;
+  if (userStatus) {
+    filter = { status: userStatus };
+  } else {
+    filter = {};
+  }
+  const result = await User.find(filter)
+    .skip(page * size)
+    .limit(size);
+  res.send(result);
 });
 // get role / status / user
 app.get("/user/role/:email", async (req, res) => {
@@ -51,7 +74,19 @@ app.put("/user/update/:email", async (req, res) => {
 });
 // get all blogs
 app.get("/blogs", async (req, res) => {
-  const result = await Blog.find();
+  const blogStatus = req.query.status;
+  let filter;
+  if (blogStatus) {
+    filter = { status: blogStatus };
+  } else {
+    filter = {};
+  }
+  const result = await Blog.find(filter);
+  res.send(result);
+});
+//get published blogs
+app.get("/blogs/published", async (req, res) => {
+  const result = await Blog.find({ status: "published" });
   res.send(result);
 });
 // post a blog
@@ -83,11 +118,45 @@ app.get("/blood-donations", async (req, res) => {
   const result = await BloodRequest.find();
   res.send(result);
 });
+// get blood donation request pagination
+app.get("/blood-donation/selected", async (req, res) => {
+  const page = Number(req.query.page - 1) || 0;
+  const size = Number(req.query.size) || 3;
+  const status = req.query.donationStatus;
+  let filter;
+  if (status) {
+    filter = { donationStatus: status };
+  } else {
+    filter = {};
+  }
+  const result = await BloodRequest.find(filter)
+    .skip(page * size)
+    .limit(size);
+  res.send(result);
+});
 // get specific donors blood donation requests
-app.get("/blood-donations/:email", async (req, res) => {
+app.get("/my-blood-donations/:email", async (req, res) => {
   const email = req.params.email;
   const filter = { requesterEmail: email };
   const result = await BloodRequest.find(filter);
+  res.send(result);
+});
+// get specific donors blood donation requests pagination
+app.get("/blood-donations/:email", async (req, res) => {
+  const email = req.params.email;
+  const donationStatus = req.query.donationStatus;
+  const page = Number(req.query.page - 1) || 0;
+  const size = Number(req.query.size) || 2;
+  // if(donationStatus !== 'all')
+  let filter;
+  if (donationStatus) {
+    filter = { requesterEmail: email, donationStatus: donationStatus };
+  } else {
+    filter = { requesterEmail: email };
+  }
+  const result = await BloodRequest.find(filter)
+    .skip(page * size)
+    .limit(size);
   res.send(result);
 });
 //get Specific recent 3 donate request
@@ -97,7 +166,6 @@ app.get("/blood-donations/recent/:email", async (req, res) => {
   const result = await BloodRequest.find(filter)
     .sort({ donationDate: 1 })
     .limit(3);
-  console.log(result);
   res.send(result);
 });
 // get single donation by id
@@ -121,7 +189,6 @@ app.post("/blood-donations", async (req, res) => {
   const donationInfo = req.body;
   const result = await BloodRequest.create(donationInfo);
   res.send(result);
-  console.log(result);
 });
 // delete blood donation request
 app.delete("/blood-donation/:id", async (req, res) => {
@@ -129,7 +196,6 @@ app.delete("/blood-donation/:id", async (req, res) => {
   const filter = { _id: id };
   const result = await BloodRequest.deleteOne(filter);
   res.send(result);
-  console.log(result);
 });
 //update blood donation status
 app.patch("/blood-donation/:id", async (req, res) => {
@@ -140,6 +206,13 @@ app.patch("/blood-donation/:id", async (req, res) => {
   };
   const filter = { _id: id };
   const result = await BloodRequest.updateOne(filter, data);
+  res.send(result);
+});
+//get pending blood donation requests
+app.get("/blood-donations/available/pending", async (req, res) => {
+  const result = await BloodRequest.find({
+    donationStatus: "pending",
+  });
   res.send(result);
 });
 
