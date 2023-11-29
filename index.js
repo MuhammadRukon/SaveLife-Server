@@ -12,16 +12,23 @@ const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 // middleware
 app.use(
   cors({
-    origin: [process.env.LOCAL_HOST],
+    origin: [
+      process.env.LOCAL_HOST,
+      "https://savelife-6b7c9.web.app/",
+      "https://savelife-6b7c9.firebaseapp.com/",
+    ],
     credentials: true,
   })
 );
 app.use(express.json());
 require("dotenv").config();
 
+app.get("/", (req, res) => {
+  res.send("home route");
+});
 // health check
 app.get("/health", (req, res, next) => {
-  res.send("home route");
+  res.send("healthy");
 });
 // get all users
 app.get("/users", async (req, res) => {
