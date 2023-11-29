@@ -6,8 +6,9 @@ const connectDB = require("./db/connectDB");
 const User = require("./db/userSchema");
 const Blog = require("./db/blogSchema");
 const BloodRequest = require("./db/BloodRequestSchema");
+const Transaction = require("./db/transactionSchema");
 const port = process.env.PORT || 5000;
-
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 // middleware
 app.use(
   cors({
@@ -22,7 +23,6 @@ require("dotenv").config();
 app.get("/health", (req, res, next) => {
   res.send("home route");
 });
-
 // get all users
 app.get("/users", async (req, res) => {
   const result = await User.find();
@@ -215,7 +215,36 @@ app.get("/blood-donations/available/pending", async (req, res) => {
   });
   res.send(result);
 });
-
+// get complete status donations
+app.get("/blood-donations/status/done", async (req, res) => {
+  const result = await BloodRequest.find({
+    donationStatus: "done",
+  });
+  res.send(result);
+});
+//generate client secret for stripe payment
+app.post("/create-payment-intent", async (req, res) => {
+  const { amount } = req.body;
+  const amountInCent = Number(amount) * 100;
+  if (!amount || amountInCent < 1) return;
+  const { client_secret } = await stripe.paymentIntents.create({
+    amount: amountInCent,
+    currency: "usd",
+    payment_method_types: ["card"],
+  });
+  res.send({ clientSecret: client_secret });
+});
+// get all transactions
+app.get("/fundings", async (req, res) => {
+  const result = await Transaction.find();
+  res.send(result);
+});
+// save transactions to db
+app.post("/fundings", async (req, res) => {
+  const transaction = req.body;
+  const result = await Transaction.create(transaction);
+  res.send(result);
+});
 // error handler
 app.all("*", (req, res, next) => {
   const error = new Error(`Ivalid URL : ${req.url}`);
