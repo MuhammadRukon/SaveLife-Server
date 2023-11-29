@@ -1,4 +1,5 @@
 const express = require("express");
+const jwt = require("jsonwebtoken");
 const app = express();
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -7,19 +8,36 @@ const User = require("./db/userSchema");
 const Blog = require("./db/blogSchema");
 const BloodRequest = require("./db/BloodRequestSchema");
 const Transaction = require("./db/transactionSchema");
+const cookieParser = require("cookie-parser");
 const port = process.env.PORT || 5000;
 const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 // middleware
+app.use(cookieParser());
 app.use(
   cors({
     origin: [
       process.env.LOCAL_HOST,
-      "https://savelife-6b7c9.web.app/",
-      "https://savelife-6b7c9.firebaseapp.com/",
+      "https://savelife-6b7c9.web.app",
+      "https://savelife-6b7c9.firebaseapp.com",
     ],
     credentials: true,
   })
 );
+
+const verifyToken = (req, res, next) => {
+  const token = req?.cookies?.token;
+  if (!token) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "unauthorized access" });
+    }
+    req.user = decoded;
+  });
+  next();
+};
+
 app.use(express.json());
 require("dotenv").config();
 
@@ -30,8 +48,21 @@ app.get("/", (req, res) => {
 app.get("/health", (req, res, next) => {
   res.send("healthy");
 });
+
+//jwt
+app.post("/jwt", async (req, res) => {
+  const user = req.body;
+  const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "1h" });
+  res
+    .cookie("token", token, { httpOnly: true, secure: true, sameSite: "none" })
+    .send({ token });
+});
+// clear cookie
+app.post("/logout", async (req, res) => {
+  res.clearCookie("token", { maxAge: 0 }).send({ success: true });
+});
 // get all users
-app.get("/users", async (req, res) => {
+app.get("/users", verifyToken, async (req, res) => {
   const result = await User.find();
   res.send(result);
 });
@@ -44,7 +75,7 @@ app.get("/user/find-donor/:bloodGroup", async (req, res) => {
   res.send(result), console.log(result);
 });
 // get all users pagination
-app.get("/users/selected", async (req, res) => {
+app.get("/users/selected", verifyToken, async (req, res) => {
   const userStatus = req.query.status;
   const page = Number(req.query.page - 1) || 0;
   const size = Number(req.query.size) || 4;
@@ -60,7 +91,7 @@ app.get("/users/selected", async (req, res) => {
   res.send(result);
 });
 // get role / status / user
-app.get("/user/role/:email", async (req, res) => {
+app.get("/user/role/:email", verifyToken, async (req, res) => {
   const email = req.params.email;
   const query = { email: email };
   const result = await User.findOne(query);
@@ -80,7 +111,7 @@ app.put("/user/update/:email", async (req, res) => {
   res.send(result);
 });
 // get all blogs
-app.get("/blogs", async (req, res) => {
+app.get("/blogs", verifyToken, async (req, res) => {
   const blogStatus = req.query.status;
   let filter;
   if (blogStatus) {
@@ -121,12 +152,12 @@ app.delete("/blog/:id", async (req, res) => {
   res.send(result);
 });
 // get all blood donation request
-app.get("/blood-donations", async (req, res) => {
+app.get("/blood-donations", verifyToken, async (req, res) => {
   const result = await BloodRequest.find();
   res.send(result);
 });
 // get blood donation request pagination
-app.get("/blood-donation/selected", async (req, res) => {
+app.get("/blood-donation/selected", verifyToken, async (req, res) => {
   const page = Number(req.query.page - 1) || 0;
   const size = Number(req.query.size) || 3;
   const status = req.query.donationStatus;
@@ -142,14 +173,14 @@ app.get("/blood-donation/selected", async (req, res) => {
   res.send(result);
 });
 // get specific donors blood donation requests
-app.get("/my-blood-donations/:email", async (req, res) => {
+app.get("/my-blood-donations/:email", verifyToken, async (req, res) => {
   const email = req.params.email;
   const filter = { requesterEmail: email };
   const result = await BloodRequest.find(filter);
   res.send(result);
 });
 // get specific donors blood donation requests pagination
-app.get("/blood-donations/:email", async (req, res) => {
+app.get("/blood-donations/:email", verifyToken, async (req, res) => {
   const email = req.params.email;
   const donationStatus = req.query.donationStatus;
   const page = Number(req.query.page - 1) || 0;
@@ -167,7 +198,7 @@ app.get("/blood-donations/:email", async (req, res) => {
   res.send(result);
 });
 //get Specific recent 3 donate request
-app.get("/blood-donations/recent/:email", async (req, res) => {
+app.get("/blood-donations/recent/:email", verifyToken, async (req, res) => {
   const email = req.params.email;
   const filter = { requesterEmail: email };
   const result = await BloodRequest.find(filter)
@@ -176,7 +207,7 @@ app.get("/blood-donations/recent/:email", async (req, res) => {
   res.send(result);
 });
 // get single donation by id
-app.get("/blood-donation/:id", async (req, res) => {
+app.get("/blood-donation/:id", verifyToken, async (req, res) => {
   const id = req.params.id;
   const filter = { _id: id };
   const result = await BloodRequest.findOne(filter);
@@ -242,7 +273,7 @@ app.post("/create-payment-intent", async (req, res) => {
   res.send({ clientSecret: client_secret });
 });
 // get all transactions
-app.get("/fundings", async (req, res) => {
+app.get("/fundings", verifyToken, async (req, res) => {
   const result = await Transaction.find();
   res.send(result);
 });

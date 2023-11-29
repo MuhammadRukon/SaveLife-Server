@@ -1,14 +1,14 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
-  displayName: { type: String, required: true },
-  photoURL: { type: String },
-  district: { type: String, required: true },
-  upazila: { type: String, required: true },
-  status: { type: String, required: true },
-  role: { type: String, required: true },
-  bloodGroup: { type: String, required: true },
+  email: { type: String, required: true, unique: true, default: "" },
+  displayName: { type: String, required: true, default: "" },
+  photoURL: { type: String, required: true, default: "" },
+  district: { type: String, required: true, default: "" },
+  upazila: { type: String, required: true, default: "" },
+  status: { type: String, required: true, default: "" },
+  role: { type: String, required: true, default: "" },
+  bloodGroup: { type: String, required: true, default: "" },
 });
 
 const User = mongoose.model("User", userSchema);
